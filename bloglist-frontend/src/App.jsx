@@ -6,14 +6,19 @@ import blogService from './services/blogs'
 import loginService from './services/login'
 import Toggable from './components/Toggable'
 
+import { setNotification, removeNotification  } from './reducers/notificationReducer'
+import { useSelector, useDispatch } from 'react-redux'
+
 const App = () => {
+
+  const dispatch = useDispatch()
+  const notification = useSelector(state => state)
+
   const [blogs, setBlogs] = useState([])
   const [user, setUser] = useState(null)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [updateTrigger, setUpdateTrigger] = useState(0)
-
-  const [notification, setNotification] = useState(null)
 
   const blogFormRef = useRef(null)
 
@@ -32,6 +37,13 @@ const App = () => {
     }
   }, [])
 
+  const notify = ({type, text}) => {
+    dispatch(setNotification({type, text}))
+    setTimeout(() => {
+      dispatch(removeNotification())
+    }, 3000);
+  }
+
   const handleLogin = async (event) => {
     event.preventDefault()
     try {
@@ -41,36 +53,30 @@ const App = () => {
       setUser(user)
       setUsername('')
       setPassword('')
-      setNotification({
+      notify({
         text: 'Login Successful!',
         type: 'success',
       })
 
-      setTimeout(() => {
-        setNotification(null)
-      }, 5000)
     } catch (exception) {
       if (exception.response && exception.response.data) {
-        setNotification({
+        notify({
           text: exception.response.data.error,
           type: 'error',
         })
       } else {
-        setNotification({
+        notify({
           text: 'Login Failed. Please try again',
           type: 'error',
         })
       }
-
-      setTimeout(() => {
-        setNotification(null)
-      }, 5000)
     }
   }
 
   const handleLogout = () => {
     window.localStorage.removeItem('loggedBlogAppUser')
     setUser(null)
+    notify({type: 'success', text: 'successful logout'})
   }
 
   const handleCreateBlog = async (newBlogObj) => {
@@ -80,30 +86,23 @@ const App = () => {
 
       setUpdateTrigger((prev) => prev + 1)
 
-      setNotification({
+      notify({
         text: 'New blog added!',
         type: 'success',
       })
 
-      setTimeout(() => {
-        setNotification(null)
-      }, 5000)
     } catch (exception) {
       if (exception.response && exception.response.data) {
-        setNotification({
+        notify({
           text: exception.response.data.error,
           type: 'error',
         })
       } else {
-        setNotification({
+        notify({
           text: 'Failed to create blo. Try again',
           type: 'error',
         })
       }
-
-      setTimeout(() => {
-        setNotification(null)
-      }, 5000)
     }
   }
 
@@ -113,20 +112,16 @@ const App = () => {
       setUpdateTrigger((prev) => prev + 1)
     } catch (exception) {
       if (exception.response && exception.response.data) {
-        setNotification({
+        notify({
           text: exception.response.data.error,
           type: 'error',
         })
       } else {
-        setNotification({
+        notify({
           text: 'Failed to like blog. Try again',
           type: 'error',
         })
       }
-
-      setTimeout(() => {
-        setNotification(null)
-      }, 5000)
     }
   }
 
@@ -141,20 +136,17 @@ const App = () => {
       setUpdateTrigger((prev) => prev + 1)
     } catch (exception) {
       if (exception.response && exception.response.data) {
-        setNotification({
+        notify({
           text: exception.response.data.error,
           type: 'error',
         })
       } else {
-        setNotification({
+        notify({
           text: 'Failed to delete blog. Try again',
           type: 'error',
         })
       }
 
-      setTimeout(() => {
-        setNotification(null)
-      }, 5000)
     }
   }
 
