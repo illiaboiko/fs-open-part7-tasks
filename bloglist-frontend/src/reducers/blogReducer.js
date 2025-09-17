@@ -1,27 +1,29 @@
-const blogReducer = (state = [], action) => {
-  switch (action.type) {
-    case 'GET_ALL':
+import { createSlice } from '@reduxjs/toolkit'
+
+const blogSlice = createSlice({
+  name: 'blogs',
+  initialState: [],
+  reducers: {
+    getAllBlogs(state, action) {
       return action.payload
-    case 'APPEND_BLOG':
-        return [...state, action.payload]
-    default:
-      return state
-  }
-}
+    },
+    appendBlog(state, action) {
+      state.push(action.payload)
+    },
+    deleteBlog(state, action) {
+      const idToDelete = action.payload
+      return state.filter((blog) => blog.id !== idToDelete)
+    },
+    likeBlog(state, action) {
+      const likedBlog = action.payload
+      console.log('liked blog in reducer', likedBlog)
+      return state.map((blog) =>
+        blog.id === likedBlog.id ? likedBlog : blog
+      )
+    },
+  },
+})
 
-export const getAllBlogs = (blogs) => {
-  return {
-    type: 'GET_ALL',
-    payload: blogs
-  }
-}
-
-export const appendBlog = (blog) => {
-    console.log('received blog', blog)
-    return {
-        type: 'APPEND_BLOG',
-        payload: blog
-    }
-}
-
-export default blogReducer
+export const { getAllBlogs, appendBlog, deleteBlog, likeBlog } =
+  blogSlice.actions
+export default blogSlice.reducer

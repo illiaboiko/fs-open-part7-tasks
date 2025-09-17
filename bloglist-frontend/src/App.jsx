@@ -8,7 +8,8 @@ import Toggable from './components/Toggable'
 
 import { setNotification, removeNotification  } from './reducers/notificationReducer'
 import { useSelector, useDispatch } from 'react-redux'
-import { appendBlog, getAllBlogs } from './reducers/blogReducer'
+import { appendBlog, deleteBlog, getAllBlogs, likeBlog } from './reducers/blogReducer'
+import { setUser } from './reducers/userReducer'
 
 const App = () => {
 
@@ -16,8 +17,8 @@ const App = () => {
   const notification = useSelector(state => state.notification)
 
   // const [blogs, setBlogs] = useState([])
-  const blogs = useSelector(state => state.blogs.sort((a,b)=> b.likes - a.likes))
-  const [user, setUser] = useState(null)
+  const blogs = useSelector(state => [...state.blogs].sort((a,b)=> b.likes - a.likes))
+  const user = useSelector(state => state.user)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
@@ -26,14 +27,17 @@ const App = () => {
   useEffect(() => {
     blogService
       .getAll()
-      .then((blogs) => dispatch(getAllBlogs(blogs)))
+      .then((blogs) => {
+        dispatch(getAllBlogs(blogs))
+      }
+      )
   }, [])
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedBlogAppUser')
     if (loggedUserJSON) {
       const user = JSON.parse(loggedUserJSON)
-      setUser(user)
+      dispatch(setUser(user))
       blogService.setToken(user.token)
     }
   }, [])
@@ -51,7 +55,7 @@ const App = () => {
       const user = await loginService.login({ username, password })
       window.localStorage.setItem('loggedBlogAppUser', JSON.stringify(user))
       blogService.setToken(user.token)
-      setUser(user)
+      dispatch(setUser(user))
       setUsername('')
       setPassword('')
       notify({
@@ -76,7 +80,7 @@ const App = () => {
 
   const handleLogout = () => {
     window.localStorage.removeItem('loggedBlogAppUser')
-    setUser(null)
+    dispatch(setUser(null))
     notify({type: 'success', text: 'successful logout'})
   }
 
@@ -107,10 +111,10 @@ const App = () => {
     }
   }
 
-  const likeBlog = async (blog) => {
+  const handleLike = async (blog) => {
     try {
-      await blogService.addLike(blog)
-      setUpdateTrigger((prev) => prev + 1)
+      const likedBlog = await blogService.addLike(blog)
+      dispatch(likeBlog(likedBlog))
     } catch (exception) {
       if (exception.response && exception.response.data) {
         notify({
@@ -134,7 +138,11 @@ const App = () => {
 
     try {
       await blogService.deleteBlog(id)
-      setUpdateTrigger((prev) => prev + 1)
+      dispatch(deleteBlog(id))
+      notify({
+        text: 'blog deleted',
+        type: 'success'
+      })
     } catch (exception) {
       if (exception.response && exception.response.data) {
         notify({
@@ -203,7 +211,7 @@ const App = () => {
         <div className="all-blogs">
           {blogs.map((blog) => (
             <Blog
-              addLike={likeBlog}
+              addLike={handleLike}
               deleteBlog={handleDeleteBlog}
               key={blog.id}
               blog={blog}
