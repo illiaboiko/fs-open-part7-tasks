@@ -1,8 +1,8 @@
 const notificationReducer = (state = null, action) => {
   switch (action.type) {
-    case 'SET':
+    case 'SET_NOTIFICATION':
       return action.payload
-    case 'REMOVE':
+    case 'REMOVE_NOTIFICATION':
       return null
     default:
       return state
@@ -11,7 +11,7 @@ const notificationReducer = (state = null, action) => {
 
 export const setNotification = ({ type, text }) => {
   return {
-    type: 'SET',
+    type: 'SET_NOTIFICATION',
     payload: {
       type,
       text,
@@ -21,7 +21,7 @@ export const setNotification = ({ type, text }) => {
 
 export const removeNotification = () => {
   return {
-    type: 'REMOVE',
+    type: 'REMOVE_NOTIFICATION',
   }
 }
 

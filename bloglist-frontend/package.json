@@ -9,11 +9,12 @@
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest run",
-    "server": "cd .. && cd fullstackopen-part4-blog && npm run dev",
+    "server": "cd ../.. && cd fullstackopen-part4-blog && npm run dev",
     "server:test": "cd .. && cd fullstackopen-part4-blog && npm run start:test",
     "cypress:open": "cypress open"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.9.0",
     "axios": "^1.4.0",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",

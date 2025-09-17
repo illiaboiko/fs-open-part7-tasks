@@ -8,25 +8,26 @@ import Toggable from './components/Toggable'
 
 import { setNotification, removeNotification  } from './reducers/notificationReducer'
 import { useSelector, useDispatch } from 'react-redux'
+import { appendBlog, getAllBlogs } from './reducers/blogReducer'
 
 const App = () => {
 
   const dispatch = useDispatch()
-  const notification = useSelector(state => state)
+  const notification = useSelector(state => state.notification)
 
-  const [blogs, setBlogs] = useState([])
+  // const [blogs, setBlogs] = useState([])
+  const blogs = useSelector(state => state.blogs.sort((a,b)=> b.likes - a.likes))
   const [user, setUser] = useState(null)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [updateTrigger, setUpdateTrigger] = useState(0)
 
   const blogFormRef = useRef(null)
 
   useEffect(() => {
     blogService
       .getAll()
-      .then((blogs) => setBlogs([...blogs].sort((a, b) => b.likes - a.likes)))
-  }, [updateTrigger])
+      .then((blogs) => dispatch(getAllBlogs(blogs)))
+  }, [])
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedBlogAppUser')
@@ -82,16 +83,16 @@ const App = () => {
   const handleCreateBlog = async (newBlogObj) => {
     blogFormRef.current.toggleVisibility()
     try {
-      await blogService.createBlog(newBlogObj)
-
-      setUpdateTrigger((prev) => prev + 1)
-
+      const createdBlog = await blogService.createBlog(newBlogObj)
+      dispatch(appendBlog(createdBlog))
       notify({
         text: 'New blog added!',
         type: 'success',
       })
 
     } catch (exception) {
+
+      console.log('catching exception', exception)
       if (exception.response && exception.response.data) {
         notify({
           text: exception.response.data.error,
