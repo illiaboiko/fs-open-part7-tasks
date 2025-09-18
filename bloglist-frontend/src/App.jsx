@@ -7,13 +7,25 @@ import loginService from './services/login'
 import Toggable from './components/Toggable'
 import notificationReducer from './reducers/notificationReducer'
 import NotificationContext from './NotificationContext'
+import {
+  QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import userReducer from './reducers/userReducer'
 
 const App = () => {
-  const [blogs, setBlogs] = useState([])
-  const [user, setUser] = useState(null)
+  const result = useQuery({
+    queryKey: ['blogs'],
+    queryFn: blogService.getAll,
+  })
+  console.log(JSON.parse(JSON.stringify(result)))
+  const blogs = result.data
+
+  const [user, userDispatch] = useReducer(userReducer, null)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [updateTrigger, setUpdateTrigger] = useState(0)
 
   const [notification, notificationDispatch] = useReducer(
     notificationReducer,
@@ -23,16 +35,13 @@ const App = () => {
   const blogFormRef = useRef(null)
 
   useEffect(() => {
-    blogService
-      .getAll()
-      .then((blogs) => setBlogs([...blogs].sort((a, b) => b.likes - a.likes)))
-  }, [updateTrigger])
-
-  useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedBlogAppUser')
     if (loggedUserJSON) {
       const user = JSON.parse(loggedUserJSON)
-      setUser(user)
+      userDispatch({
+        type: 'SET_USER',
+        payload: user,
+      })
       blogService.setToken(user.token)
     }
   }, [])
@@ -56,7 +65,10 @@ const App = () => {
       const user = await loginService.login({ username, password })
       window.localStorage.setItem('loggedBlogAppUser', JSON.stringify(user))
       blogService.setToken(user.token)
-      setUser(user)
+      userDispatch({
+        type: 'SET_USER',
+        payload: user,
+      })
       setUsername('')
       setPassword('')
       notify({
@@ -80,19 +92,29 @@ const App = () => {
 
   const handleLogout = () => {
     window.localStorage.removeItem('loggedBlogAppUser')
-    setUser(null)
+    userDispatch({
+      type: 'REMOVE_USER',
+    })
     notify({
       text: 'successful logout',
       type: 'success',
     })
   }
 
+  const queryClient = useQueryClient()
+
+  const newBlogMutation = useMutation({
+    mutationFn: blogService.createBlog,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blogs'] })
+    },
+  })
+
   const handleCreateBlog = async (newBlogObj) => {
     blogFormRef.current.toggleVisibility()
     try {
-      await blogService.createBlog(newBlogObj)
-
-      setUpdateTrigger((prev) => prev + 1)
+      // await blogService.createBlog(newBlogObj)
+      newBlogMutation.mutate(newBlogObj)
 
       notify({
         text: 'New blog added!',
@@ -113,10 +135,16 @@ const App = () => {
     }
   }
 
+  const likeBlogMutation = useMutation({
+    mutationFn: blogService.addLike,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blogs'] })
+    },
+  })
+
   const likeBlog = async (blog) => {
     try {
-      await blogService.addLike(blog)
-      setUpdateTrigger((prev) => prev + 1)
+      likeBlogMutation.mutate(blog)
     } catch (exception) {
       if (exception.response && exception.response.data) {
         notify({
@@ -132,14 +160,23 @@ const App = () => {
     }
   }
 
+  const handleDeleteBlogMutation = useMutation({
+    mutationFn: blogService.deleteBlog,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blogs'] })
+    },
+  })
   const handleDeleteBlog = async (id) => {
     if (!window.confirm('Delete blog?')) {
       return
     }
 
     try {
-      await blogService.deleteBlog(id)
-      setUpdateTrigger((prev) => prev + 1)
+      handleDeleteBlogMutation.mutate(id)
+      notify({
+        type: 'success',
+        text: 'deleted a blog',
+      })
     } catch (exception) {
       if (exception.response && exception.response.data) {
         notify({
@@ -211,15 +248,21 @@ const App = () => {
         )}
 
         <div className="all-blogs">
-          {blogs.map((blog) => (
-            <Blog
-              addLike={likeBlog}
-              deleteBlog={handleDeleteBlog}
-              key={blog.id}
-              blog={blog}
-              user={user}
-            />
-          ))}
+          {result.isLoading !== true ? (
+            blogs.map((blog) => (
+              <Blog
+                addLike={likeBlog}
+                deleteBlog={handleDeleteBlog}
+                key={blog.id}
+                blog={blog}
+                user={user}
+              />
+            ))
+          ) : (
+            <>
+              <p>Loading data...</p>
+            </>
+          )}
         </div>
 
         <div>
