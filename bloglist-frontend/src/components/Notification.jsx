@@ -1,15 +1,21 @@
-const Notification = ({ text, type }) => {
-  let color = ''
+import { useContext } from "react"
+import NotificationContext from "../NotificationContext"
 
+const Notification = () => {
+
+  const [{type, text}] = useContext(NotificationContext)
+
+  let color = ''
+ 
   switch (type) {
-  case 'error':
-    color = 'red'
-    break
-  case 'success':
-    color = 'green'
-    break
-  default:
-    break
+    case 'error':
+      color = 'red'
+      break
+    case 'success':
+      color = 'green'
+      break
+    default:
+      break
   }
 
   const style = {

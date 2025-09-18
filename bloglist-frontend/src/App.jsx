@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useReducer } from 'react'
 import Blog from './components/Blog'
 import BlogForm from './components/BlogForm'
 import Notification from './components/Notification'
 import blogService from './services/blogs'
 import loginService from './services/login'
 import Toggable from './components/Toggable'
+import notificationReducer from './reducers/notificationReducer'
+import NotificationContext from './NotificationContext'
 
 const App = () => {
   const [blogs, setBlogs] = useState([])
@@ -13,7 +15,10 @@ const App = () => {
   const [password, setPassword] = useState('')
   const [updateTrigger, setUpdateTrigger] = useState(0)
 
-  const [notification, setNotification] = useState(null)
+  const [notification, notificationDispatch] = useReducer(
+    notificationReducer,
+    null
+  )
 
   const blogFormRef = useRef(null)
 
@@ -32,6 +37,19 @@ const App = () => {
     }
   }, [])
 
+  const notify = ({ text, type }) => {
+    notificationDispatch({
+      type: 'SET_NOTIFICATION',
+      payload: { text, type },
+    })
+
+    setTimeout(() => {
+      notificationDispatch({
+        type: 'REMOVE_NOTIFICATION',
+      })
+    }, 3000)
+  }
+
   const handleLogin = async (event) => {
     event.preventDefault()
     try {
@@ -41,36 +59,32 @@ const App = () => {
       setUser(user)
       setUsername('')
       setPassword('')
-      setNotification({
+      notify({
         text: 'Login Successful!',
         type: 'success',
       })
-
-      setTimeout(() => {
-        setNotification(null)
-      }, 5000)
     } catch (exception) {
       if (exception.response && exception.response.data) {
-        setNotification({
+        notify({
           text: exception.response.data.error,
           type: 'error',
         })
       } else {
-        setNotification({
+        notify({
           text: 'Login Failed. Please try again',
           type: 'error',
         })
       }
-
-      setTimeout(() => {
-        setNotification(null)
-      }, 5000)
     }
   }
 
   const handleLogout = () => {
     window.localStorage.removeItem('loggedBlogAppUser')
     setUser(null)
+    notify({
+      text: 'successful logout',
+      type: 'success',
+    })
   }
 
   const handleCreateBlog = async (newBlogObj) => {
@@ -80,30 +94,22 @@ const App = () => {
 
       setUpdateTrigger((prev) => prev + 1)
 
-      setNotification({
+      notify({
         text: 'New blog added!',
         type: 'success',
       })
-
-      setTimeout(() => {
-        setNotification(null)
-      }, 5000)
     } catch (exception) {
       if (exception.response && exception.response.data) {
-        setNotification({
+        notify({
           text: exception.response.data.error,
           type: 'error',
         })
       } else {
-        setNotification({
+        notify({
           text: 'Failed to create blo. Try again',
           type: 'error',
         })
       }
-
-      setTimeout(() => {
-        setNotification(null)
-      }, 5000)
     }
   }
 
@@ -113,26 +119,21 @@ const App = () => {
       setUpdateTrigger((prev) => prev + 1)
     } catch (exception) {
       if (exception.response && exception.response.data) {
-        setNotification({
+        notify({
           text: exception.response.data.error,
           type: 'error',
         })
       } else {
-        setNotification({
+        notify({
           text: 'Failed to like blog. Try again',
           type: 'error',
         })
       }
-
-      setTimeout(() => {
-        setNotification(null)
-      }, 5000)
     }
   }
 
   const handleDeleteBlog = async (id) => {
-
-    if(!window.confirm('Delete blog?')) {
+    if (!window.confirm('Delete blog?')) {
       return
     }
 
@@ -141,20 +142,16 @@ const App = () => {
       setUpdateTrigger((prev) => prev + 1)
     } catch (exception) {
       if (exception.response && exception.response.data) {
-        setNotification({
+        notify({
           text: exception.response.data.error,
           type: 'error',
         })
       } else {
-        setNotification({
+        notify({
           text: 'Failed to delete blog. Try again',
           type: 'error',
         })
       }
-
-      setTimeout(() => {
-        setNotification(null)
-      }, 5000)
     }
   }
 
@@ -179,7 +176,9 @@ const App = () => {
             onChange={({ target }) => setPassword(target.value)}
           />
           <br />
-          <button id='log-in-button' type="submit">log in</button>
+          <button id="log-in-button" type="submit">
+            log in
+          </button>
         </form>
         <br />
       </>
@@ -191,7 +190,11 @@ const App = () => {
       <div>
         <h2>blogs</h2>
         {notification && (
-          <Notification text={notification.text} type={notification.type} />
+          <NotificationContext.Provider
+            value={[notification, notificationDispatch]}
+          >
+            <Notification />
+          </NotificationContext.Provider>
         )}
         {user !== null ? (
           <div>
@@ -223,7 +226,6 @@ const App = () => {
           <br />
           <footer>Illia Boiko. Exercise for course by fullstackopen.com</footer>
         </div>
-
       </div>
     </div>
   )
