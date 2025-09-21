@@ -1,31 +1,28 @@
-import { useState, useEffect, useRef, useReducer } from 'react'
-import Blog from './components/Blog'
-import BlogForm from './components/BlogForm'
+import { useEffect, useRef, useReducer } from 'react'
 import Notification from './components/Notification'
 import blogService from './services/blogs'
+import userService from './services/users'
 import loginService from './services/login'
-import Toggable from './components/Toggable'
 import notificationReducer from './reducers/notificationReducer'
 import NotificationContext from './NotificationContext'
-import {
-  QueryClient,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import userReducer from './reducers/userReducer'
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useMatch,
+  Navigate,
+  Link,
+} from 'react-router-dom'
+import LoginForm from './components/LoginForm'
+import AllBlogs from './components/AllBlogs'
+import Users from './components/Users'
+import User from './components/User'
+import Blog from './components/Blog'
 
 const App = () => {
-  const result = useQuery({
-    queryKey: ['blogs'],
-    queryFn: blogService.getAll,
-  })
-  console.log(JSON.parse(JSON.stringify(result)))
-  const blogs = result.data
-
   const [user, userDispatch] = useReducer(userReducer, null)
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
 
   const [notification, notificationDispatch] = useReducer(
     notificationReducer,
@@ -59,8 +56,7 @@ const App = () => {
     }, 3000)
   }
 
-  const handleLogin = async (event) => {
-    event.preventDefault()
+  const handleLogin = async ({ username, password }) => {
     try {
       const user = await loginService.login({ username, password })
       window.localStorage.setItem('loggedBlogAppUser', JSON.stringify(user))
@@ -69,8 +65,8 @@ const App = () => {
         type: 'SET_USER',
         payload: user,
       })
-      setUsername('')
-      setPassword('')
+      // setUsername('')
+      // setPassword('')
       notify({
         text: 'Login Successful!',
         type: 'success',
@@ -144,6 +140,7 @@ const App = () => {
 
   const likeBlog = async (blog) => {
     try {
+      console.log('like blog', blog)
       likeBlogMutation.mutate(blog)
     } catch (exception) {
       if (exception.response && exception.response.data) {
@@ -192,78 +189,110 @@ const App = () => {
     }
   }
 
-  const loginForm = () => {
-    return (
-      <>
-        <p>Please log in:</p>
-        <form onSubmit={handleLogin}>
-          <input
-            type="text"
-            name="login"
-            id="login"
-            value={username}
-            onChange={({ target }) => setUsername(target.value)}
-          />
-          <br />
-          <input
-            type="password"
-            name="password"
-            id="password"
-            value={password}
-            onChange={({ target }) => setPassword(target.value)}
-          />
-          <br />
-          <button id="log-in-button" type="submit">
-            log in
-          </button>
-        </form>
-        <br />
-      </>
-    )
+  const padding = {
+    padding: 5,
+  }
+
+  const blogsQuery = useQuery({
+    queryKey: ['blogs'],
+    queryFn: blogService.getAll,
+  })
+  const blogs = blogsQuery.data
+
+  const usersQuery = useQuery({
+    queryKey: ['users'],
+    queryFn: userService.getAll,
+  })
+  const users = usersQuery.data
+
+  const userMatch = useMatch('/users/:id')
+  let userForComponent = null
+  if (users) {
+    userForComponent = userMatch
+      ? users.find((user) => user.id === userMatch.params.id)
+      : null
+  }
+
+  const blogMatch = useMatch('/blogs/:id')
+  let blogForComponent = null
+  if (blogs) {
+    blogForComponent = blogMatch
+      ? blogs.find((blog) => blog.id === blogMatch.params.id)
+      : null
+  }
+
+  const navStyle = {
+    display: 'flex',
+    gap: '1rem',
+    backgroundColor: '#f4f4f4',
+    padding: '10px 20px',
+    borderBottom: '1px solid #ddd',
   }
 
   return (
     <div>
       <div>
-        <h2>blogs</h2>
-        {notification && (
-          <NotificationContext.Provider
-            value={[notification, notificationDispatch]}
-          >
-            <Notification />
-          </NotificationContext.Provider>
-        )}
-        {user !== null ? (
+        <div style={navStyle}>
+          <Link to="/blogs">Blogs</Link>
+          <Link to="/users">Users</Link>
           <div>
-            <p>
-              user <strong>{user.username}</strong> logged in
-            </p>
-            <button onClick={handleLogout}>LogOut</button>
-            <Toggable buttonLabel="New Blog" ref={blogFormRef}>
-              <BlogForm createBlog={handleCreateBlog} />
-            </Toggable>
+            {user !== null ? (
+              <div style={{display: 'flex', gap: '1rem'}}>
+                <span>user <strong>{user.username}</strong> logged in</span>
+                <button style={{display: 'inline-block'}} onClick={handleLogout}>LogOut</button>
+              </div>
+            ) : (
+              <LoginForm logIn={handleLogin} />
+            )}
           </div>
-        ) : (
-          loginForm()
-        )}
+        </div>
+        <div>
+          {notification && (
+            <NotificationContext.Provider
+              value={[notification, notificationDispatch]}
+            >
+              <Notification />
+            </NotificationContext.Provider>
+          )}
+        </div>
 
-        <div className="all-blogs">
-          {result.isLoading !== true ? (
-            blogs.map((blog) => (
+        <Routes>
+          <Route
+            path="/users"
+            element={<Users users={users} result={usersQuery} />}
+          />
+          <Route
+            path="/users/:id"
+            element={<User user={userForComponent} result={usersQuery} />}
+          />
+          <Route
+            path="/"
+            element={
+              <AllBlogs
+                user={user}
+                blogs={blogs}
+                likeBlog={likeBlog}
+                result={blogsQuery}
+                handleDeleteBlog={handleDeleteBlog}
+                handleCreateBlog={handleCreateBlog}
+                blogFormRef={blogFormRef}
+              />
+            }
+          />
+
+          <Route path="/blogs" element={<Navigate replace to="/" />} />
+          <Route
+            path="/blogs/:id"
+            element={
               <Blog
                 addLike={likeBlog}
                 deleteBlog={handleDeleteBlog}
-                key={blog.id}
-                blog={blog}
+                blog={blogForComponent}
                 user={user}
               />
-            ))
-          ) : (
-            <>
-              <p>Loading data...</p>
-            </>
-          )}
-        </div>
+            }
+          />
+        </Routes>
 
         <div>
           <br />
