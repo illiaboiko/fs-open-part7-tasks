@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import blogService from '../services/blogs'
 import Comments from './Comments'
+import { Link } from 'react-router-dom'
 
 const Blog = ({ blog, addLike, deleteBlog, user }) => {
   const blogStyle = {
@@ -11,6 +12,7 @@ const Blog = ({ blog, addLike, deleteBlog, user }) => {
     display: 'block',
   }
 
+  
   const commentsQuery = useQuery({
     queryKey: ['comments'],
     queryFn: () => blogService.getComments(blog.id),
@@ -20,6 +22,7 @@ const Blog = ({ blog, addLike, deleteBlog, user }) => {
   if (!blog) {
     return <>no blog data</>
   }
+
 
   return (
     <div style={blogStyle}>
@@ -35,7 +38,7 @@ const Blog = ({ blog, addLike, deleteBlog, user }) => {
           <button onClick={() => addLike(blog)} data-testid="like-btn">
             like
           </button>
-          <div>created by: {blog.user.username}</div>
+          <div>created by: <Link to={`/users/${blog.user.id}`}>{blog.user.username}</Link></div>
         </div>
         {user && user.username === blog.user.username ? (
           <div>
