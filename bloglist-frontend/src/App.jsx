@@ -289,6 +289,7 @@ const App = () => {
                 deleteBlog={handleDeleteBlog}
                 blog={blogForComponent}
                 user={user}
+                notify={notify}
               />
             }
           />

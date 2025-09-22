@@ -1,4 +1,6 @@
-const Comments = ({ comments, isLoading }) => {
+import CommentForm from "./CommentForm"
+
+const Comments = ({ comments, isLoading , createComment}) => {
   if (isLoading) {
     return <>Loading Comments</>
   }
@@ -9,6 +11,7 @@ const Comments = ({ comments, isLoading }) => {
   return (
     <>
     <h3>Comments</h3>
+    <CommentForm  createComment={createComment} />
       <ul>
         {comments.map((comment) => (
           <li key={comment}>{comment}</li>

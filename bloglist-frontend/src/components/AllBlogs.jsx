@@ -14,7 +14,7 @@ const AllBlogs = ({
 }) => {
 
 
-  
+
 
   const isLoading = result.isLoading || false
 
