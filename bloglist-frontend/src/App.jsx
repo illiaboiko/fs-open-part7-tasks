@@ -20,6 +20,10 @@ import AllBlogs from './components/AllBlogs'
 import Users from './components/Users'
 import User from './components/User'
 import Blog from './components/Blog'
+import SiteMenu from './components/SiteMenu'
+import { SiteFooter } from './components/SiteFooter'
+import { Container, Stack } from '@mui/material'
+import ResponsiveAppBar from './components/ResponsiveAppBar'
 
 const App = () => {
   const [user, userDispatch] = useReducer(userReducer, null)
@@ -230,23 +234,16 @@ const App = () => {
   }
 
   return (
-    <div>
-      <div>
-        <div style={navStyle}>
-          <Link to="/blogs">Blogs</Link>
-          <Link to="/users">Users</Link>
-          <div>
-            {user !== null ? (
-              <div style={{display: 'flex', gap: '1rem'}}>
-                <span>user <strong>{user.username}</strong> logged in</span>
-                <button style={{display: 'inline-block'}} onClick={handleLogout}>LogOut</button>
-              </div>
-            ) : (
-              <LoginForm logIn={handleLogin} />
-            )}
-          </div>
-        </div>
-        <div>
+    <>
+        <Stack spacing={2}>
+          <ResponsiveAppBar user={user} handleLogout={handleLogout} handleLogin={handleLogin}/>
+          {/* <SiteMenu
+            user={user}
+            handleLogin={handleLogin}
+            handleLogout={handleLogout}
+          /> */}
+
+          {/* notification component */}
           {notification && (
             <NotificationContext.Provider
               value={[notification, notificationDispatch]}
@@ -254,53 +251,50 @@ const App = () => {
               <Notification />
             </NotificationContext.Provider>
           )}
-        </div>
 
-        <Routes>
-          <Route
-            path="/users"
-            element={<Users users={users} result={usersQuery} />}
-          />
-          <Route
-            path="/users/:id"
-            element={<User user={userForComponent} result={usersQuery} />}
-          />
-          <Route
-            path="/"
-            element={
-              <AllBlogs
-                user={user}
-                blogs={blogs}
-                likeBlog={likeBlog}
-                result={blogsQuery}
-                handleDeleteBlog={handleDeleteBlog}
-                handleCreateBlog={handleCreateBlog}
-                blogFormRef={blogFormRef}
+          <Container>
+            <Routes>
+              <Route
+                path="/users"
+                element={<Users users={users} result={usersQuery} />}
               />
-            }
-          />
-
-          <Route path="/blogs" element={<Navigate replace to="/" />} />
-          <Route
-            path="/blogs/:id"
-            element={
-              <Blog
-                addLike={likeBlog}
-                deleteBlog={handleDeleteBlog}
-                blog={blogForComponent}
-                user={user}
-                notify={notify}
+              <Route
+                path="/users/:id"
+                element={<User user={userForComponent} result={usersQuery} />}
               />
-            }
-          />
-        </Routes>
+              <Route
+                path="/"
+                element={
+                  <AllBlogs
+                    user={user}
+                    blogs={blogs}
+                    likeBlog={likeBlog}
+                    result={blogsQuery}
+                    handleDeleteBlog={handleDeleteBlog}
+                    handleCreateBlog={handleCreateBlog}
+                    blogFormRef={blogFormRef}
+                  />
+                }
+              />
+              <Route path="/blogs" element={<Navigate replace to="/" />} />
+              <Route
+                path="/blogs/:id"
+                element={
+                  <Blog
+                    addLike={likeBlog}
+                    deleteBlog={handleDeleteBlog}
+                    blog={blogForComponent}
+                    user={user}
+                    notify={notify}
+                  />
+                }
+              />
+            </Routes>
+          </Container>
 
-        <div>
-          <br />
-          <footer>Illia Boiko. Exercise for course by fullstackopen.com</footer>
-        </div>
-      </div>
-    </div>
+          <SiteFooter />
+        </Stack>
+    </>
   )
 }
 

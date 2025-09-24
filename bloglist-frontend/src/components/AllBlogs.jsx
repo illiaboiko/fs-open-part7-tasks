@@ -26,7 +26,7 @@ const AllBlogs = ({
   }
   return (
     <>
-    <h2>blog app</h2>
+    <h2>All Blogs</h2>
       <Toggable buttonLabel="New Blog" ref={blogFormRef}>
         <BlogForm createBlog={handleCreateBlog} />
       </Toggable>
